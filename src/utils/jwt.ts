@@ -10,3 +10,17 @@ export const generateAccessToken = (user: any): string => {
         : "1800s",
   });
 };
+
+export const verifyAccessToken = (
+  token: string
+): string | null | jwt.JwtPayload => {
+  try {
+    return jwt.verify(token, String(process.env.JWT_SECRET));
+  } catch (error) {
+    return null;
+  }
+};
+
+export const decodeAccessToken = (token: string) => {
+  return jwt.decode(token, { json: true });
+};

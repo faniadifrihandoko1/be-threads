@@ -51,4 +51,10 @@ export class User {
 
   @OneToMany(() => Like, (like) => like.user)
   like: Like[];
+
+  @OneToMany(() => Like, (like) => like.thread, {
+    onDelete: "CASCADE",
+    onUpdate: "CASCADE",
+  })
+  thread: Like[];
 }

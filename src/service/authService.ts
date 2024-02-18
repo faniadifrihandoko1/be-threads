@@ -5,7 +5,12 @@ import { compare, encript } from "../utils/bcrypt";
 import userType from "../types/userType";
 import { generateAccessToken } from "../utils/jwt";
 import { Request, Response } from "express";
-import { loginValidation, registerValidation } from "../validations/authValidation";
+import {
+  loginValidation,
+  registerValidation,
+} from "../validations/authValidation";
+import * as bcrypt from "bcrypt";
+import { get } from "http";
 
 export default new (class AuthService {
   private readonly userRepository: Repository<User> =
@@ -16,7 +21,7 @@ export default new (class AuthService {
       const data = req.body;
       const getData = await this.userRepository
         .createQueryBuilder()
-        .where({ email: data.email, fullName: data.fullName })
+        .where({ email: data.email })
         .getCount();
 
       if (getData > 0) {
@@ -28,8 +33,7 @@ export default new (class AuthService {
       const { error, value } = registerValidation(req.body);
       if (error != null) {
         return res.status(400).json({
-          error: error.details[0].message,
-          message: "input data gagal",
+          message: error.details[0].message,
         });
       }
       value.password = encript(value.password);
@@ -45,30 +49,36 @@ export default new (class AuthService {
   async login(req: Request, res: Response): Promise<Response> {
     const { error, value } = loginValidation(req.body);
     const getData = await this.userRepository
-      .createQueryBuilder()
+      .createQueryBuilder("user")
       .where({ email: value.email })
       .getOne();
+    console.log(getData);
     if (error != null) {
       return res.status(400).json({
-        error: error.details[0].message,
         message: "input data gagal",
-        data: value,
       });
     }
 
-    if (value === null) {
+    if (!getData) {
       return res.status(400).json({
         message: "Email not found",
       });
     }
 
-    if (!compare(value.password, getData.password)) {
+    const comparePassword = await bcrypt.compare(
+      value.password,
+      getData.password
+    );
+    if (!comparePassword) {
       return res.status(400).json({
         message: "Wrong password",
       });
     }
-
-    const token = generateAccessToken({ value });
+    value.password = "XXxXXXXXXXXX";
+    value.username = getData.fullName;
+    value.id = getData.id;
+    console.log(getData);
+    const token = generateAccessToken(value);
     return res.status(200).json({
       message: "Login success",
       token,

@@ -9,7 +9,23 @@ export default new (class threadService {
 
   async findAll(req: Request, res: Response): Promise<Response> {
     try {
-      const response = await this.threadRepository.find();
+      const response = await this.threadRepository
+        .createQueryBuilder("thread")
+        .leftJoinAndSelect("thread.user", "user")
+        .leftJoinAndSelect("thread.reply", "reply")
+        .select([
+          "thread",
+          "user.id",
+          "user.fullName",
+          "user.username",
+          "user.email",
+          "user.photo_profile",
+          "reply.id",
+          "reply.content",
+          "reply.image",
+          "reply.created_at",
+        ])
+        .getMany();
       return res.status(200).json(response);
     } catch (error) {
       return res.status(500).json(error);
@@ -19,6 +35,8 @@ export default new (class threadService {
   async create(req: Request, res: Response): Promise<Response> {
     try {
       const data = req.body;
+      data.user = res.locals.loginSession.id;
+      // console.log(data.user);
       const response = await this.threadRepository
         .createQueryBuilder()
         .insert()
@@ -44,6 +62,7 @@ export default new (class threadService {
       .where({ id })
       .execute();
     console.log(response);
+
     if (response.affected == 1) {
       return res.status(200).json({ message: "update success" });
     } else {
@@ -59,10 +78,11 @@ export default new (class threadService {
       .from(Thread)
       .where({ id })
       .execute();
-    if (!response) {
+
+    if (response.affected == 1) {
+      return res.status(200).json({ message: "delete data berhasil" });
+    } else {
       return res.status(404).json({ message: `Thread ${id} not found` });
     }
-    console.log(response);
-    return res.status(200).json({ message: "delete data berhasil" });
   }
 })();

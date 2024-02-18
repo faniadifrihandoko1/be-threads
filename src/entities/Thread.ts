@@ -5,9 +5,11 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   OneToMany,
+  ManyToOne,
 } from "typeorm";
 import { Reply } from "./Reply";
 import { Like } from "./Like";
+import { User } from "./User";
 
 @Entity()
 export class Thread {
@@ -31,4 +33,7 @@ export class Thread {
 
   @OneToMany(() => Like, (like) => like.thread)
   like: Like[];
+
+  @ManyToOne(() => User, (user) => user.thread)
+  user: User;
 }
