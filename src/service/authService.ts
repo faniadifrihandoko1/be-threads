@@ -18,11 +18,18 @@ export default new (class AuthService {
 
   async register(req: Request, res: Response): Promise<Response> {
     try {
-      const data = req.body;
+      const { error, value } = registerValidation(req.body);
+      if (error != null) {
+        return res.status(400).json({
+          message: error.details[0].message,
+        });
+      }
       const getData = await this.userRepository
-        .createQueryBuilder()
-        .where({ email: data.email })
+        .createQueryBuilder("user")
+        .where({ email: value.email })
         .getCount();
+      console.log(`get data :`, getData);
+      console.log(`value :`, value);
 
       if (getData > 0) {
         return res.status(400).json({
@@ -30,13 +37,15 @@ export default new (class AuthService {
         });
       }
 
-      const { error, value } = registerValidation(req.body);
-      if (error != null) {
-        return res.status(400).json({
-          message: error.details[0].message,
-        });
-      }
       value.password = encript(value.password);
+
+      const response = await this.userRepository
+        .createQueryBuilder()
+        .insert()
+        .into(User)
+        .values(value)
+        .execute();
+      console.log(`response :`, response);
       return res.status(200).json({
         message: "Register success",
         data: value,
@@ -75,13 +84,14 @@ export default new (class AuthService {
       });
     }
     value.password = "XXxXXXXXXXXX";
-    value.username = getData.fullName;
+    value.fullName = getData.fullName;
     value.id = getData.id;
     console.log(getData);
     const token = generateAccessToken(value);
     return res.status(200).json({
       message: "Login success",
       token,
+      // data: getData,
     });
   }
 })();

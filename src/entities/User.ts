@@ -44,12 +44,18 @@ export class User {
   following: Following[];
 
   @OneToMany(() => Following, (follower) => follower.Follower)
-  Follower: Following[];
+  follower: Following[];
 
-  @OneToMany(() => Reply, (reply) => reply.user)
+  @OneToMany(() => Reply, (reply) => reply.user, {
+    onDelete: "CASCADE",
+    onUpdate: "CASCADE",
+  })
   reply: Reply[];
 
-  @OneToMany(() => Like, (like) => like.user)
+  @OneToMany(() => Like, (like) => like.user, {
+    onDelete: "CASCADE",
+    onUpdate: "CASCADE",
+  })
   like: Like[];
 
   @OneToMany(() => Like, (like) => like.thread, {

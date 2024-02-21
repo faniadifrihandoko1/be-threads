@@ -23,6 +23,6 @@ export class Following {
   @ManyToOne(() => User, (user) => user.following)
   Following: User;
 
-  @ManyToOne(() => User, (user) => user.Follower)
+  @ManyToOne(() => User, (user) => user.follower)
   Follower: User;
 }

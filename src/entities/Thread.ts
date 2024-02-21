@@ -19,7 +19,7 @@ export class Thread {
   @Column()
   content: string;
 
-  @Column()
+  @Column({ nullable: true })
   image: string;
 
   @CreateDateColumn()
@@ -31,7 +31,10 @@ export class Thread {
   @OneToMany(() => Reply, (reply) => reply.thread)
   reply: Reply[];
 
-  @OneToMany(() => Like, (like) => like.thread)
+  @OneToMany(() => Like, (like) => like.thread, {
+    onDelete: "CASCADE",
+    onUpdate: "CASCADE",
+  })
   like: Like[];
 
   @ManyToOne(() => User, (user) => user.thread)

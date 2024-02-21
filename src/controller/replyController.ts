@@ -9,4 +9,8 @@ export default new (class replyController {
   create(req: Request, res: Response) {
     replyServices.create(req, res);
   }
+
+  delete(req: Request, res: Response) {
+    replyServices.delete(req, res);
+  }
 })();

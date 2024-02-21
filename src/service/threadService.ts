@@ -2,6 +2,8 @@ import { Repository } from "typeorm";
 import { Thread } from "../entities/Thread";
 import { AppDataSource } from "../data-source";
 import { Request, Response } from "express";
+import { Reply } from "../entities/Reply";
+import cloudinary from "../lib/cloudinary";
 
 export default new (class threadService {
   private readonly threadRepository: Repository<Thread> =
@@ -11,8 +13,12 @@ export default new (class threadService {
     try {
       const response = await this.threadRepository
         .createQueryBuilder("thread")
+        .orderBy("thread.created_at", "DESC")
         .leftJoinAndSelect("thread.user", "user")
         .leftJoinAndSelect("thread.reply", "reply")
+        .leftJoinAndSelect("reply.user", "replyUser")
+        .leftJoinAndSelect("thread.like", "like")
+        .leftJoinAndSelect("like.user", "userLike")
         .select([
           "thread",
           "user.id",
@@ -24,6 +30,12 @@ export default new (class threadService {
           "reply.content",
           "reply.image",
           "reply.created_at",
+          "reply.updated_at",
+          "replyUser.id",
+          "replyUser.fullName",
+          "replyUser.username",
+          "like.id",
+          "userLike.id",
         ])
         .getMany();
       return res.status(200).json(response);
@@ -36,7 +48,33 @@ export default new (class threadService {
     try {
       const data = req.body;
       data.user = res.locals.loginSession.id;
-      // console.log(data.user);
+      let img = null;
+      console.log(`req file`, req.file);
+      if (req.file) {
+        data.image = res.locals.filename;
+        const cloud = await cloudinary.destination(data.image);
+        data.image = cloud;
+      } else {
+        data.image = img;
+      }
+
+      // const uploadFile = await cloudinary.destination(res.locals.fileName);
+      // let data;
+      // // console.log(`data image`, data.image);
+      // if (!res.locals.fileName) {
+      //   data = {
+      //     content: req.body.content,
+      //     user: res.locals.loginSession.id,
+      //   };
+      // } else {
+      //   data = {
+      //     content: req.body.content,
+      //     image: uploadFile,
+      //     user: res.locals.loginSession.id,
+      //   };
+      // }
+
+      // console.log(data);
       const response = await this.threadRepository
         .createQueryBuilder()
         .insert()
@@ -75,7 +113,7 @@ export default new (class threadService {
     const response = await this.threadRepository
       .createQueryBuilder()
       .delete()
-      .from(Thread)
+      .from(Reply)
       .where({ id })
       .execute();
 
