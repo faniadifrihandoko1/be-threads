@@ -20,9 +20,15 @@ export class Following {
   @UpdateDateColumn()
   updated_at: Date;
 
-  @ManyToOne(() => User, (user) => user.following)
+  @ManyToOne(() => User, (user) => user.following, {
+    onDelete: "CASCADE",
+    onUpdate: "CASCADE",
+  })
   Following: User;
 
-  @ManyToOne(() => User, (user) => user.follower)
+  @ManyToOne(() => User, (user) => user.follower, {
+    onDelete: "CASCADE",
+    onUpdate: "CASCADE",
+  })
   Follower: User;
 }

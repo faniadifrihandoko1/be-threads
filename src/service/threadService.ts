@@ -19,6 +19,12 @@ export default new (class threadService {
         .leftJoinAndSelect("reply.user", "replyUser")
         .leftJoinAndSelect("thread.like", "like")
         .leftJoinAndSelect("like.user", "userLike")
+        .addSelect((subQuery) => {
+          return subQuery
+            .select("COUNT(like.id)", "count_like")
+            .from("like", "like")
+            .where("like.threadId = thread.id");
+        }, "count_like")
         .select([
           "thread",
           "user.id",
@@ -37,7 +43,10 @@ export default new (class threadService {
           "like.id",
           "userLike.id",
         ])
+        .loadRelationCountAndMap("thread.reply_count", "thread.reply")
+        .loadRelationCountAndMap("thread.like_count", "thread.like")
         .getMany();
+
       return res.status(200).json(response);
     } catch (error) {
       return res.status(500).json(error);
