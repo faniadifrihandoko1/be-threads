@@ -28,16 +28,22 @@ Route.post(
   threadController.create
 );
 Route.patch("/thread/:id", threadController.update);
-Route.delete("/thread/:id", threadController.delete);
+Route.delete("/thread/:id", authentication, threadController.delete);
 
 // Reply
 Route.get("/thread/reply", replyController.getAll);
-Route.post("/thread/reply", authentication, replyController.create);
+Route.post(
+  "/thread/reply/:id",
+  uploadFile.uploadImage("image"),
+  authentication,
+  replyController.create
+);
 Route.delete("/thread/reply/:id", authentication, replyController.delete);
 
 // like
 Route.get("/thread/like", authentication, likeController.getall);
-Route.post("/thread/like", authentication, likeController.create);
+Route.post("/thread/like/:id", authentication, likeController.create);
+Route.get("/thread/:id/like", authentication, likeController.getLikeByUser);
 
 // Follow
 Route.post("/user/follow", authentication, followController.kitaNgeFollowOrang);

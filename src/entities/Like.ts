@@ -5,6 +5,7 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   ManyToOne,
+  JoinColumn,
 } from "typeorm";
 import { User } from "./User";
 import { Thread } from "./Thread";
@@ -23,6 +24,10 @@ export class Like {
   @ManyToOne(() => User, (user) => user.like)
   user: User;
 
-  @ManyToOne(() => Thread, (thread) => thread.like)
+  @ManyToOne(() => Thread, (thread) => thread.like, {
+    onDelete: "CASCADE",
+    onUpdate: "CASCADE",
+  })
+  @JoinColumn({ name: "thread_id" })
   thread: Thread;
 }

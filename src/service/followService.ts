@@ -57,64 +57,15 @@ export default new (class followService {
 
     const response = await this.followRepository.findOne({
       where: {
-        Following: data.following,
+        // nama saua adalagbvb aldfag suri zwegta kjw2kwkwk
       },
     });
 
-    const follow = await this.followRepository.create({
-      Follower: data.follower,
-      Following: data.following,
-    });
-    const sayaNgefollow = await this.followRepository.save(follow);
-    return res.status(200).json({ message: "follow", sayaNgefollow });
-  }
-  // const getDataYangDiFollow = await this.followRepository
-  //   .createQueryBuilder()
-  //   .leftJoinAndSelect("Following.Following", "user")
-  //   .where({
-  //     Following: data.following,
-  //     Follower: res.locals.loginSession.id,
-  //   })
-  //   .getOne();
-  // if (getDataYangDiFollow) {
-  //   this.unfollow(getDataYangDiFollow.id);
-  // }
-  // console.log(`id user login`, data.follower);
-  // console.log(`id user yang di follow`, data.following);
-
-  // const sayaNgefollow = await this.followRepository
-  //   .createQueryBuilder()
-  //   .createQueryBuilder()
-  //   .insert()
-  //   .into(Following)
-  //   .values(data)
-  //   .execute();
-  // console.log(`sayaNgefollow`, sayaNgefollow);
-
-  async unfollow(id: any) {
-    const response = await this.followRepository
-      .createQueryBuilder()
-      .delete()
-      .from(Following)
-      .where({ id })
-      .execute();
-
-    return {
-      message: "Success unfollow users",
-    };
-  }
-
-  async finc(
-    loginSession: any,
-    queryTypes: string,
-    queryLimit: string
-  ): Promise<any> {
-    // kondisi dimana ketika query tipe diterima
-    
-    
-    try {
-    } catch (error) {
-      throw new Error(error);
-    }
+    // const follow = await this.followRepository.create({
+    //   Follower: data.follower,
+    //   Following: data.following,
+    // });
+    // const sayaNgefollow = await this.followRepository.save(follow);
+    return res.status(200).json({ message: "follow" });
   }
 })();

@@ -1,4 +1,4 @@
-import { Repository } from "typeorm";
+import { Equal, Repository } from "typeorm";
 import { Like } from "../entities/Like";
 import { AppDataSource } from "../data-source";
 import { Request, Response } from "express";
@@ -21,29 +21,44 @@ export default new (class likeService {
     }
   }
 
+  async getLikeByUser(threadId: number, userId: Number) {
+    const response = await this.likeRepository
+      .createQueryBuilder()
+      .where({ thread: threadId, user: userId })
+      .getOne();
+
+    console.log(`response`, response);
+
+    if (response) {
+      console.log(`true`);
+      return true;
+    } else {
+      console.log(`false`);
+      return false;
+    }
+  }
+
   async create(req: Request, res: Response): Promise<Response> {
     try {
       const data = req.body;
       data.user = res.locals.loginSession.id;
-
+      data.thread = Number(req.params.id);
       // Mengecek apakah like sudah ada sebelumnya
       const existingLike = await this.likeRepository.findOne({
         where: {
-          user: data.user,
-          thread: data.thread,
-        },
+          user: {
+            id: Equal(data.user),
+          },
+          thread: {
+            id: Equal(data.thread),
+          },
+          }
       });
 
+      console.log(`existingLike`, existingLike);
       if (existingLike) {
         // Jika like sudah ada, maka hapus (unlike)
-        const unlikeResponse = await this.likeRepository
-          .createQueryBuilder()
-          .delete()
-          .from(Like)
-          .where("user = :userId", { userId: data.user })
-          .andWhere("thread = :threadId", { threadId: data.thread })
-          .execute();
-
+        const unlikeResponse = await this.likeRepository.remove(existingLike);
         console.log(`unlikeResponse`, unlikeResponse);
 
         return res.status(200).json({
@@ -58,9 +73,15 @@ export default new (class likeService {
           .into(Like)
           .values(data)
           .execute();
+        // const like = this.likeRepository.create({
+        //   thread: data.thread,
+        //   user: data.user,
+        // });
 
-        console.log(`likeResponse`, likeResponse);
-
+        // const response = await this.likeRepository.save({
+        //   thread: data.thread,
+        //   user: data.user,
+        // });
         return res.status(200).json({
           message: "liked",
           response: likeResponse,

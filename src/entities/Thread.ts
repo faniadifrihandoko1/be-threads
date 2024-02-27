@@ -22,13 +22,18 @@ export class Thread {
   @Column({ nullable: true })
   image: string;
 
+  
+
   @CreateDateColumn()
   created_at: Date;
 
   @UpdateDateColumn()
   updated_at: Date;
 
-  @OneToMany(() => Reply, (reply) => reply.thread)
+  @OneToMany(() => Reply, (reply) => reply.thread, {
+    onDelete: "CASCADE",
+    onUpdate: "CASCADE",
+  })
   reply: Reply[];
 
   @OneToMany(() => Like, (like) => like.thread, {
@@ -37,6 +42,9 @@ export class Thread {
   })
   like: Like[];
 
-  @ManyToOne(() => User, (user) => user.thread)
+  @ManyToOne(() => User, (user) => user.thread, {
+    onDelete: "CASCADE",
+    onUpdate: "CASCADE",
+  })
   user: User;
 }

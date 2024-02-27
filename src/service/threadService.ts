@@ -4,13 +4,18 @@ import { AppDataSource } from "../data-source";
 import { Request, Response } from "express";
 import { Reply } from "../entities/Reply";
 import cloudinary from "../lib/cloudinary";
+import likeService from "./likeService";
+import { Like } from "../entities/Like";
 
 export default new (class threadService {
   private readonly threadRepository: Repository<Thread> =
     AppDataSource.getRepository(Thread);
 
+  private readonly likeRepository: Repository<Like> =
+    AppDataSource.getRepository(Like);
   async findAll(req: Request, res: Response): Promise<Response> {
     try {
+      // const isLikeThread = await likeService.getLikeByUser(response)
       const response = await this.threadRepository
         .createQueryBuilder("thread")
         .orderBy("thread.created_at", "DESC")
@@ -19,12 +24,7 @@ export default new (class threadService {
         .leftJoinAndSelect("reply.user", "replyUser")
         .leftJoinAndSelect("thread.like", "like")
         .leftJoinAndSelect("like.user", "userLike")
-        .addSelect((subQuery) => {
-          return subQuery
-            .select("COUNT(like.id)", "count_like")
-            .from("like", "like")
-            .where("like.threadId = thread.id");
-        }, "count_like")
+
         .select([
           "thread",
           "user.id",
@@ -47,6 +47,44 @@ export default new (class threadService {
         .loadRelationCountAndMap("thread.like_count", "thread.like")
         .getMany();
 
+      // const like = response.map(async (item) => {
+      //   await likeService.getLikeByUser(item.id, res.locals.loginSession.id);
+      // });
+
+      // const userId = res.locals.loginSession.id;
+      // console.log(userId);
+
+      // const like = await this.likeRepository
+      //   .createQueryBuilder()
+      //   .leftJoinAndSelect("Like.user", "user")
+      //   .leftJoinAndSelect("Like.thread", "thread")
+      //   .select(["Like", "user.id", "thread.id"])
+      //   .where({ user: userId })
+
+      //   .getMany();
+
+      // console.log(like);
+
+      // // console.log(`like`, like);
+
+      // const data = response.map((item) => {
+      //   return {
+      //     id: item.id,
+      //     content: item.content,
+      //     image: item.image,
+      //     reply_count: item.reply.length,
+      //     like_count: item.like.length,
+      //     created_at: item.created_at,
+      //     updated_at: item.updated_at,
+      //     user: item.user,
+      //     like: item.like,
+      //     reply: item.reply,
+      //     isLike: like.some((like) => like.thread.id === item.id),
+      //   };
+      // });
+
+      // console.log(`data`, data);
+
       return res.status(200).json(response);
     } catch (error) {
       return res.status(500).json(error);
@@ -66,7 +104,7 @@ export default new (class threadService {
       } else {
         data.image = img;
       }
-
+      console.log(`data`, data);
       // const uploadFile = await cloudinary.destination(res.locals.fileName);
       // let data;
       // // console.log(`data image`, data.image);
@@ -119,17 +157,37 @@ export default new (class threadService {
 
   async delete(req: Request, res: Response): Promise<Response> {
     const id = Number(req.params.id);
-    const response = await this.threadRepository
-      .createQueryBuilder()
-      .delete()
-      .from(Reply)
+    const userLogin = res.locals.loginSession;
+    const ThreadId = await this.threadRepository
+      .createQueryBuilder("thread")
+      .leftJoinAndSelect("thread.user", "user")
       .where({ id })
-      .execute();
+      .getMany();
 
-    if (response.affected == 1) {
+    console.log(ThreadId[0].user);
+    if (ThreadId[0].user.id == userLogin.id) {
+      const response = await this.threadRepository
+        .createQueryBuilder()
+        .delete()
+        .from(Thread)
+        .where({ id })
+        .execute();
       return res.status(200).json({ message: "delete data berhasil" });
     } else {
-      return res.status(404).json({ message: `Thread ${id} not found` });
+      return res.status(404).json({ message: `delete tidak bisa` });
     }
+
+    // const response = await this.threadRepository
+    //   .createQueryBuilder()
+    //   .delete()
+    //   .from(Reply)
+    //   .where({ id })
+    //   .execute();
+
+    // if (response.affected == 1) {
+    //   return res.status(200).json({ message: "delete data berhasil" });
+    // } else {
+    //   return res.status(404).json({ message: `Thread ${id} not found` });
+    // }
   }
 })();

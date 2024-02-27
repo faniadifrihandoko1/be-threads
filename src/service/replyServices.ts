@@ -2,6 +2,7 @@ import { Repository } from "typeorm";
 import { Reply } from "../entities/Reply";
 import { AppDataSource } from "../data-source";
 import { Request, Response } from "express";
+import cloudinary from "../lib/cloudinary";
 
 export default new (class replyService {
   private readonly replyRepository: Repository<Reply> =
@@ -27,7 +28,17 @@ export default new (class replyService {
     try {
       const data = req.body;
       data.user = res.locals.loginSession.id;
-      data.thread = Number(req.body.thread);
+      data.thread = Number(req.params.id);
+      console.log(req.params.id);
+
+      let img = null;
+      if (req.file) {
+        data.image = res.locals.filename;
+        const cloud = await cloudinary.destination(data.image);
+        data.image = cloud;
+      } else {
+        data.image = img;
+      }
 
       const response = await this.replyRepository
         .createQueryBuilder()

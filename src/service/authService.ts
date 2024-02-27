@@ -60,8 +60,10 @@ export default new (class AuthService {
     const getData = await this.userRepository
       .createQueryBuilder("user")
       .where({ email: value.email })
+      .leftJoinAndSelect("user.following", "following")
+      .leftJoinAndSelect("user.follower", "follower")
       .getOne();
-    console.log(getData);
+
     if (error != null) {
       return res.status(400).json({
         message: "input data gagal",
@@ -73,7 +75,6 @@ export default new (class AuthService {
         message: "Email not found",
       });
     }
-
     const comparePassword = await bcrypt.compare(
       value.password,
       getData.password
@@ -83,15 +84,22 @@ export default new (class AuthService {
         message: "Wrong password",
       });
     }
-    value.password = "XXxXXXXXXXXX";
-    value.fullName = getData.fullName;
-    value.id = getData.id;
-    console.log(getData);
-    const token = generateAccessToken(value);
+
+    const obj = {
+      id: getData.id,
+      email: getData.email,
+      username: getData.username,
+      fullName: getData.fullName,
+      photo_profile: getData.photo_profile,
+      bio: getData.bio,
+      following: getData.following,
+      follower: getData.follower,
+    };
+
+    const token = generateAccessToken(obj);
     return res.status(200).json({
       message: "Login success",
       token,
-      // data: getData,
     });
   }
 })();
