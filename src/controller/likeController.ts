@@ -10,6 +10,7 @@ export default new (class likeController {
   create(req: Request, res: Response) {
     likeService.create(req, res);
   }
+  
 
   async getLikeByUser(req: Request, res: Response): Promise<Response> {
     try {
@@ -18,7 +19,7 @@ export default new (class likeController {
       const userId = res.locals.loginSession.id;
 
       const response = await likeService.getLikeByUser(threadId, userId);
-      return res.status(200).json({ message: "success" });
+      return res.status(200).json({ message: "success", response });
     } catch (error) {
       return res.status(500).json({ message: error });
     }

@@ -23,17 +23,13 @@ export default new (class likeService {
 
   async getLikeByUser(threadId: number, userId: Number) {
     const response = await this.likeRepository
-      .createQueryBuilder()
+      .createQueryBuilder("like")
       .where({ thread: threadId, user: userId })
       .getOne();
 
-    console.log(`response`, response);
-
     if (response) {
-      console.log(`true`);
       return true;
     } else {
-      console.log(`false`);
       return false;
     }
   }
@@ -52,7 +48,7 @@ export default new (class likeService {
           thread: {
             id: Equal(data.thread),
           },
-          }
+        },
       });
 
       console.log(`existingLike`, existingLike);

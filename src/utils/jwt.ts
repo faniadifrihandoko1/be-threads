@@ -7,7 +7,7 @@ export const generateAccessToken = (user: any): string => {
     expiresIn:
       process.env.JWT_EXPIRES_IN != null
         ? String(process.env.JWT_EXPIRES_IN)
-        : "1800s",
+        : "24h",
   });
 };
 

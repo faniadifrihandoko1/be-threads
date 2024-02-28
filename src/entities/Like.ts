@@ -28,6 +28,6 @@ export class Like {
     onDelete: "CASCADE",
     onUpdate: "CASCADE",
   })
-  @JoinColumn({ name: "thread_id" })
+  @JoinColumn()
   thread: Thread;
 }

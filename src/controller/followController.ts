@@ -2,8 +2,12 @@ import { Request, Response } from "express";
 import followService from "../service/followService";
 
 export default new (class followController {
-  kitaNgeFollowOrang(req: Request, res: Response) {
-    followService.ngefollow(req, res);
+  follow(req: Request, res: Response) {
+    followService.follow(req, res);
+  }
+
+  find(req: Request, res: Response) {
+    followService.find(req, res);
   }
 
   async create(req: Request, res: Response): Promise<Response> {
@@ -19,6 +23,5 @@ export default new (class followController {
     }
   }
 
-
-  // check data following kita check id kita di 
+  // check data following kita check id kita di
 })();

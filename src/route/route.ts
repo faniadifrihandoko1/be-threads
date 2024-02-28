@@ -46,5 +46,7 @@ Route.post("/thread/like/:id", authentication, likeController.create);
 Route.get("/thread/:id/like", authentication, likeController.getLikeByUser);
 
 // Follow
-Route.post("/user/follow", authentication, followController.kitaNgeFollowOrang);
+Route.get("/user/follow", authentication, followController.find);
+Route.post("/user/follow", authentication, followController.follow);
+
 export default Route;

@@ -6,6 +6,7 @@ import { Reply } from "../entities/Reply";
 import cloudinary from "../lib/cloudinary";
 import likeService from "./likeService";
 import { Like } from "../entities/Like";
+import { number } from "joi";
 
 export default new (class threadService {
   private readonly threadRepository: Repository<Thread> =
@@ -16,6 +17,8 @@ export default new (class threadService {
   async findAll(req: Request, res: Response): Promise<Response> {
     try {
       // const isLikeThread = await likeService.getLikeByUser(response)
+      const userId = req.query.id;
+      console.log(Number(userId));
       const response = await this.threadRepository
         .createQueryBuilder("thread")
         .orderBy("thread.created_at", "DESC")
@@ -40,6 +43,7 @@ export default new (class threadService {
           "replyUser.id",
           "replyUser.fullName",
           "replyUser.username",
+          "replyUser.photo_profile",
           "like.id",
           "userLike.id",
         ])
@@ -47,10 +51,28 @@ export default new (class threadService {
         .loadRelationCountAndMap("thread.like_count", "thread.like")
         .getMany();
 
-      // const like = response.map(async (item) => {
-      //   await likeService.getLikeByUser(item.id, res.locals.loginSession.id);
-      // });
+      const likes = response.map(async (item) => {
+        return await likeService.getLikeByUser(item.id, Number(userId));
+      });
 
+      const resolvedLikes = await Promise.all(likes);
+      const threads = [];
+      let i = 0;
+      for (i; i < response.length; i++) {
+        threads.push({
+          id: response[i].id,
+          content: response[i].content,
+          image: response[i].image,
+          reply_count: response[i].reply.length,
+          like_count: response[i].like.length,
+          created_at: response[i].created_at,
+          updated_at: response[i].updated_at,
+          isLiked: resolvedLikes[i],
+          user: response[i].user,
+          like: response[i].like,
+          reply: response[i].reply,
+        });
+      }
       // const userId = res.locals.loginSession.id;
       // console.log(userId);
 
@@ -85,7 +107,7 @@ export default new (class threadService {
 
       // console.log(`data`, data);
 
-      return res.status(200).json(response);
+      return res.status(200).json(await Promise.all(threads));
     } catch (error) {
       return res.status(500).json(error);
     }

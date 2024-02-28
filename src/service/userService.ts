@@ -51,6 +51,8 @@ export default new (class userService {
       .where({
         id: userLogin,
       })
+      .leftJoinAndSelect("User.following", "following")
+      .leftJoinAndSelect("User.follower", "follower")
       .getOne();
     console.log(response);
     return res.status(200).json({
@@ -62,6 +64,8 @@ export default new (class userService {
         photo_profile: response.photo_profile,
         bio: response.bio,
         username: response.username,
+        following: response.following.length,
+        follower: response.follower.length,
       },
     });
   }
