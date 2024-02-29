@@ -6,6 +6,10 @@ export default new (class threadController {
     threadService.findAll(req, res);
   }
 
+  getThreadByUser(req: Request, res: Response) {
+    threadService.getThreadByUser(req, res);
+  }
+
   create(req: Request, res: Response) {
     threadService.create(req, res);
   }

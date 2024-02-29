@@ -21,6 +21,7 @@ Route.get("/check", authentication, userController.check);
 
 // Thread
 Route.get("/thread", threadController.findAll);
+Route.get("/threadUser", authentication, threadController.getThreadByUser);
 Route.post(
   "/thread",
   authentication,

@@ -27,9 +27,15 @@ export class Reply {
   @UpdateDateColumn()
   updated_at: Date;
 
-  @ManyToOne(() => Thread, (thread) => thread.reply)
+  @ManyToOne(() => Thread, (thread) => thread.reply, {
+    onDelete: "CASCADE",
+    onUpdate: "CASCADE",
+  })
   thread: Thread;
 
-  @ManyToOne(() => User, (user) => user.reply)
+  @ManyToOne(() => User, (user) => user.reply, {
+    onDelete: "CASCADE",
+    onUpdate: "CASCADE",
+  })
   user: User;
 }

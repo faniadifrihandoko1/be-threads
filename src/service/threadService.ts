@@ -14,6 +14,66 @@ export default new (class threadService {
 
   private readonly likeRepository: Repository<Like> =
     AppDataSource.getRepository(Like);
+
+  async getThreadByUser(req: Request, res: Response): Promise<Response> {
+    const userId = res.locals.loginSession.id;
+    const response = await this.threadRepository
+      .createQueryBuilder("thread")
+      .orderBy("thread.created_at", "DESC")
+      .where({ user: { id: userId } })
+      .leftJoinAndSelect("thread.user", "user")
+      .leftJoinAndSelect("thread.reply", "reply")
+      .leftJoinAndSelect("reply.user", "replyUser")
+      .leftJoinAndSelect("thread.like", "like")
+      .leftJoinAndSelect("like.user", "userLike")
+      .select([
+        "thread",
+        "user.id",
+        "user.fullName",
+        "user.username",
+        "user.email",
+        "user.photo_profile",
+        "reply.id",
+        "reply.content",
+        "reply.image",
+        "reply.created_at",
+        "reply.updated_at",
+        "replyUser.id",
+        "replyUser.fullName",
+        "replyUser.username",
+        "replyUser.photo_profile",
+        "like.id",
+        "userLike.id",
+      ])
+      .loadRelationCountAndMap("thread.reply_count", "thread.reply")
+      .loadRelationCountAndMap("thread.like_count", "thread.like")
+      .getMany();
+
+    const likes = response.map(async (item) => {
+      return await likeService.getLikeByUser(item.id, Number(userId));
+    });
+
+    const resolvedLikes = await Promise.all(likes);
+    const threads = [];
+    let i = 0;
+    for (i; i < response.length; i++) {
+      threads.push({
+        id: response[i].id,
+        content: response[i].content,
+        image: response[i].image,
+        reply_count: response[i].reply.length,
+        like_count: response[i].like.length,
+        created_at: response[i].created_at,
+        updated_at: response[i].updated_at,
+        isLiked: resolvedLikes[i],
+        user: response[i].user,
+        like: response[i].like,
+        reply: response[i].reply,
+      });
+    }
+
+    return res.status(200).json(await Promise.all(threads));
+  }
   async findAll(req: Request, res: Response): Promise<Response> {
     try {
       // const isLikeThread = await likeService.getLikeByUser(response)
@@ -73,39 +133,6 @@ export default new (class threadService {
           reply: response[i].reply,
         });
       }
-      // const userId = res.locals.loginSession.id;
-      // console.log(userId);
-
-      // const like = await this.likeRepository
-      //   .createQueryBuilder()
-      //   .leftJoinAndSelect("Like.user", "user")
-      //   .leftJoinAndSelect("Like.thread", "thread")
-      //   .select(["Like", "user.id", "thread.id"])
-      //   .where({ user: userId })
-
-      //   .getMany();
-
-      // console.log(like);
-
-      // // console.log(`like`, like);
-
-      // const data = response.map((item) => {
-      //   return {
-      //     id: item.id,
-      //     content: item.content,
-      //     image: item.image,
-      //     reply_count: item.reply.length,
-      //     like_count: item.like.length,
-      //     created_at: item.created_at,
-      //     updated_at: item.updated_at,
-      //     user: item.user,
-      //     like: item.like,
-      //     reply: item.reply,
-      //     isLike: like.some((like) => like.thread.id === item.id),
-      //   };
-      // });
-
-      // console.log(`data`, data);
 
       return res.status(200).json(await Promise.all(threads));
     } catch (error) {
@@ -126,24 +153,7 @@ export default new (class threadService {
       } else {
         data.image = img;
       }
-      console.log(`data`, data);
-      // const uploadFile = await cloudinary.destination(res.locals.fileName);
-      // let data;
-      // // console.log(`data image`, data.image);
-      // if (!res.locals.fileName) {
-      //   data = {
-      //     content: req.body.content,
-      //     user: res.locals.loginSession.id,
-      //   };
-      // } else {
-      //   data = {
-      //     content: req.body.content,
-      //     image: uploadFile,
-      //     user: res.locals.loginSession.id,
-      //   };
-      // }
 
-      // console.log(data);
       const response = await this.threadRepository
         .createQueryBuilder()
         .insert()
@@ -168,7 +178,6 @@ export default new (class threadService {
       .set(data)
       .where({ id })
       .execute();
-    console.log(response);
 
     if (response.affected == 1) {
       return res.status(200).json({ message: "update success" });

@@ -1,18 +1,24 @@
-import { Equal, Repository } from "typeorm";
+import { Equal, Like, Not, Repository, SelectQueryBuilder } from "typeorm";
 import { AppDataSource } from "../data-source";
 import { Following } from "../entities/Following";
 import { Request, Response } from "express";
 import { json } from "stream/consumers";
+import { User } from "../entities/User";
+import { any } from "joi";
 
 export default new (class followService {
   private readonly followRepository: Repository<Following> =
     AppDataSource.getRepository(Following);
+
+  private readonly userRepository: Repository<User> =
+    AppDataSource.getRepository(User);
 
   async find(req: Request, res: Response): Promise<Response> {
     try {
       const userId = res.locals.loginSession.id;
       const type = (req.query.type ?? "") as string;
       const limit = (req.query.limit ?? 0) as number;
+      const searchTerm = req.query.searchTerm as string;
 
       let follow: Following[];
       if (type === "following") {
@@ -26,7 +32,6 @@ export default new (class followService {
             Following: true,
           },
         });
-        console.log(follow);
 
         const mappedData = follow.map((data) => ({
           id: data.id,
@@ -38,7 +43,7 @@ export default new (class followService {
           bio: data.Following.bio,
           is_following: true,
         }));
-        console.log(mappedData);
+
         return res.status(200).json({ message: "success", data: mappedData });
       } else if (type === "follower") {
         follow = await this.followRepository.find({
@@ -52,7 +57,6 @@ export default new (class followService {
           },
         });
 
-        console.log(follow);
         const mappedData = await Promise.all(
           follow.map(async (data) => {
             const isFollowed = await this.followRepository.count({
@@ -78,14 +82,74 @@ export default new (class followService {
             };
           })
         );
-        console.log(mappedData);
-        return res.status(200).json({ message: "success", data: mappedData });
-      }
 
+        return res.status(200).json({ message: "success", data: mappedData });
+      } else if (type === "search") {
+        const users = await this.userRepository
+          .createQueryBuilder()
+          .where({ username: Like(`%${searchTerm}%`) })
+          .andWhere({ id: Not(userId) })
+          .leftJoinAndSelect("User.following", "following")
+          .leftJoinAndSelect("User.follower", "follower")
+          .leftJoinAndSelect("following.Follower", "Follower")
+          .getMany();
+
+        const mappedData = users.map((user) => {
+          return {
+            id: user.id,
+            username: user.username,
+            fullName: user.fullName,
+            photo_profile: user.photo_profile,
+            is_following: user.following.some(
+              (following) => following.Follower.id == userId
+            ),
+            // is_follower: user.follower.some(
+            //   (follower) => follower.id == userId
+            // ),
+          };
+        });
+
+        // Membuat respons JSON berisi hasil pencarian
+        return res.status(200).json({ message: "success", data: mappedData });
+      } else if (type === "sugestion") {
+        const users = await this.userRepository
+          .createQueryBuilder()
+          .andWhere({ id: Not(userId) })
+          .leftJoinAndSelect("User.following", "following")
+          .leftJoinAndSelect("User.follower", "follower")
+          .leftJoinAndSelect("following.Follower", "Follower")
+          .getMany();
+
+        const mappedData = users.filter((item) => {
+          return !item.following.some(
+            (following) => following.Follower.id == userId
+          );
+        });
+
+        const suggestedUsers = mappedData.map((user) => ({
+          id: user.id,
+          username: user.username,
+          fullName: user.fullName,
+          photo_profile: user.photo_profile,
+          is_following: false, // karena ini adalah fitur saran, semua pengguna belum diikuti
+        }));
+
+        return res
+          .status(200)
+          .json({ message: "success", data: suggestedUsers });
+      }
       // Handle other cases or return an appropriate response if 'type' is not 'following'
     } catch (error) {
       return res.status(500).json(error);
     }
+  }
+
+  async getSuggestion(req: Request, res: Response) {
+    const userId = res.locals.loginSession.id;
+
+    const allUser = this.followRepository
+      .createQueryBuilder("follow")
+      .getMany();
   }
 
   async follow(req: Request, res: Response): Promise<Response> {
@@ -112,7 +176,7 @@ export default new (class followService {
             id: Number(following),
           },
         });
-        return res.status(400).json({ message: "Success unFollow" });
+        return res.status(200).json({ message: "Success unFollow" });
       } else {
         const follow = await this.followRepository.save({
           Follower: {
