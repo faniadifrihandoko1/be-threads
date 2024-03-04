@@ -15,7 +15,12 @@ Route.post("/register", authController.register);
 Route.post("/login", authController.login);
 
 // User
-Route.put("/user/:id", userController.update);
+Route.put(
+  "/user/:id",
+
+  uploadFile.uploadImage("photo_profile"),
+  userController.update
+);
 Route.get("/user/get-current", authentication, userController.getCurrent);
 Route.get("/check", authentication, userController.check);
 

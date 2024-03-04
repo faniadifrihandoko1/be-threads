@@ -29,7 +29,6 @@ export default new (class replyService {
       const data = req.body;
       data.user = res.locals.loginSession.id;
       data.thread = Number(req.params.id);
-      console.log(req.params.id);
 
       let img = null;
       if (req.file) {
@@ -47,12 +46,10 @@ export default new (class replyService {
         .values(data)
         .execute();
 
-      console.log(`response:`, response);
       return res.status(200).json({
         message: "success",
       });
     } catch (error) {
-      console.log(error);
       return res.status(500).json(error);
     }
   }

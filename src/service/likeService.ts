@@ -51,11 +51,9 @@ export default new (class likeService {
         },
       });
 
-      console.log(`existingLike`, existingLike);
       if (existingLike) {
         // Jika like sudah ada, maka hapus (unlike)
         const unlikeResponse = await this.likeRepository.remove(existingLike);
-        console.log(`unlikeResponse`, unlikeResponse);
 
         return res.status(200).json({
           message: "unliked",
@@ -69,15 +67,6 @@ export default new (class likeService {
           .into(Like)
           .values(data)
           .execute();
-        // const like = this.likeRepository.create({
-        //   thread: data.thread,
-        //   user: data.user,
-        // });
-
-        // const response = await this.likeRepository.save({
-        //   thread: data.thread,
-        //   user: data.user,
-        // });
         return res.status(200).json({
           message: "liked",
           response: likeResponse,

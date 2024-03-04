@@ -28,8 +28,6 @@ export default new (class AuthService {
         .createQueryBuilder("user")
         .where({ email: value.email })
         .getCount();
-      console.log(`get data :`, getData);
-      console.log(`value :`, value);
 
       if (getData > 0) {
         return res.status(400).json({

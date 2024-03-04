@@ -24,7 +24,7 @@ export const authentication = (
 
   const user = verifyAccessToken(token);
   res.locals.loginSession = user;
-  // console.log("res local auth", res.locals.loginSession);
+
   if (!user) {
     return res
       .status(401)

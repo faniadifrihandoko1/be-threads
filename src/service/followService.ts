@@ -103,9 +103,6 @@ export default new (class followService {
             is_following: user.following.some(
               (following) => following.Follower.id == userId
             ),
-            // is_follower: user.follower.some(
-            //   (follower) => follower.id == userId
-            // ),
           };
         });
 
@@ -137,6 +134,25 @@ export default new (class followService {
         return res
           .status(200)
           .json({ message: "success", data: suggestedUsers });
+      } else if (type === "allUser") {
+        const users = await this.userRepository
+          .createQueryBuilder()
+          .leftJoinAndSelect("User.following", "following")
+          .leftJoinAndSelect("User.follower", "follower")
+          .leftJoinAndSelect("following.Follower", "Follower")
+          .getMany();
+
+        const mappedData = users.map((user) => ({
+          id: user.id,
+          username: user.username,
+          fullName: user.fullName,
+          photo_profile: user.photo_profile,
+          is_following: user.following.some(
+            (following) => following.Follower.id == userId
+          ),
+        }));
+
+        return res.status(200).json({ message: "success", data: mappedData });
       }
       // Handle other cases or return an appropriate response if 'type' is not 'following'
     } catch (error) {
@@ -237,7 +253,6 @@ export default new (class followService {
   async ngefollow(req: Request, res: Response): Promise<Response> {
     const data = req.body;
     data.follower = res.locals.loginSession.id;
-    console.log(data.follower);
 
     const response = await this.followRepository.findOne({
       where: {

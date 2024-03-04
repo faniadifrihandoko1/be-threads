@@ -78,7 +78,7 @@ export default new (class threadService {
     try {
       // const isLikeThread = await likeService.getLikeByUser(response)
       const userId = req.query.id;
-      console.log(Number(userId));
+
       const response = await this.threadRepository
         .createQueryBuilder("thread")
         .orderBy("thread.created_at", "DESC")
@@ -145,7 +145,7 @@ export default new (class threadService {
       const data = req.body;
       data.user = res.locals.loginSession.id;
       let img = null;
-      console.log(`req file`, req.file);
+
       if (req.file) {
         data.image = res.locals.filename;
         const cloud = await cloudinary.destination(data.image);
@@ -195,7 +195,6 @@ export default new (class threadService {
       .where({ id })
       .getMany();
 
-    console.log(ThreadId[0].user);
     if (ThreadId[0].user.id == userLogin.id) {
       const response = await this.threadRepository
         .createQueryBuilder()
