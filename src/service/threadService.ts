@@ -7,6 +7,7 @@ import cloudinary from "../lib/cloudinary";
 import likeService from "./likeService";
 import { Like } from "../entities/Like";
 import { number } from "joi";
+import { redisClient } from "../lib/redis";
 
 export default new (class threadService {
   private readonly threadRepository: Repository<Thread> =
@@ -78,61 +79,70 @@ export default new (class threadService {
     try {
       // const isLikeThread = await likeService.getLikeByUser(response)
       const userId = req.query.id;
+      let data = await redisClient.get("users");
 
-      const response = await this.threadRepository
-        .createQueryBuilder("thread")
-        .orderBy("thread.created_at", "DESC")
-        .leftJoinAndSelect("thread.user", "user")
-        .leftJoinAndSelect("thread.reply", "reply")
-        .leftJoinAndSelect("reply.user", "replyUser")
-        .leftJoinAndSelect("thread.like", "like")
-        .leftJoinAndSelect("like.user", "userLike")
+      if (!data) {
+        const dataFromDB = await this.threadRepository
+          .createQueryBuilder("thread")
+          .orderBy("thread.created_at", "DESC")
+          .leftJoinAndSelect("thread.user", "user")
+          .leftJoinAndSelect("thread.reply", "reply")
+          .leftJoinAndSelect("reply.user", "replyUser")
+          .leftJoinAndSelect("thread.like", "like")
+          .leftJoinAndSelect("like.user", "userLike")
 
-        .select([
-          "thread",
-          "user.id",
-          "user.fullName",
-          "user.username",
-          "user.email",
-          "user.photo_profile",
-          "reply.id",
-          "reply.content",
-          "reply.image",
-          "reply.created_at",
-          "reply.updated_at",
-          "replyUser.id",
-          "replyUser.fullName",
-          "replyUser.username",
-          "replyUser.photo_profile",
-          "like.id",
-          "userLike.id",
-        ])
-        .loadRelationCountAndMap("thread.reply_count", "thread.reply")
-        .loadRelationCountAndMap("thread.like_count", "thread.like")
-        .getMany();
+          .select([
+            "thread",
+            "user.id",
+            "user.fullName",
+            "user.username",
+            "user.email",
+            "user.photo_profile",
+            "reply.id",
+            "reply.content",
+            "reply.image",
+            "reply.created_at",
+            "reply.updated_at",
+            "replyUser.id",
+            "replyUser.fullName",
+            "replyUser.username",
+            "replyUser.photo_profile",
+            "like.id",
+            "userLike.id",
+          ])
+          .loadRelationCountAndMap("thread.reply_count", "thread.reply")
+          .loadRelationCountAndMap("thread.like_count", "thread.like")
+          .getMany();
 
-      const likes = response.map(async (item) => {
-        return await likeService.getLikeByUser(item.id, Number(userId));
-      });
-
-      const resolvedLikes = await Promise.all(likes);
-      const threads = [];
-      let i = 0;
-      for (i; i < response.length; i++) {
-        threads.push({
-          id: response[i].id,
-          content: response[i].content,
-          image: response[i].image,
-          reply_count: response[i].reply.length,
-          like_count: response[i].like.length,
-          created_at: response[i].created_at,
-          updated_at: response[i].updated_at,
-          isLiked: resolvedLikes[i],
-          user: response[i].user,
-          like: response[i].like,
-          reply: response[i].reply,
+        // console.log("dataFromDB", dataFromDB);
+        const likes = dataFromDB.map(async (item) => {
+          return await likeService.getLikeByUser(item.id, Number(userId));
         });
+
+        const resolvedLikes = await Promise.all(likes);
+        const threads = [];
+        let i = 0;
+        for (i; i < dataFromDB.length; i++) {
+          threads.push({
+            id: dataFromDB[i].id,
+            content: dataFromDB[i].content,
+            image: dataFromDB[i].image,
+            reply_count: dataFromDB[i].reply.length,
+            like_count: dataFromDB[i].like.length,
+            created_at: dataFromDB[i].created_at,
+            updated_at: dataFromDB[i].updated_at,
+            isLiked: resolvedLikes[i],
+            user: dataFromDB[i].user,
+            like: dataFromDB[i].like,
+            reply: dataFromDB[i].reply,
+          });
+        }
+        const stringDataDB = JSON.stringify(threads);
+
+        data = stringDataDB;
+        await redisClient.set("users", stringDataDB);
       }
+      const threads = JSON.parse(data);
 
       return res.status(200).json(await Promise.all(threads));
     } catch (error) {

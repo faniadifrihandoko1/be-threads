@@ -3,6 +3,7 @@ import { User } from "../entities/User";
 import { AppDataSource } from "../data-source";
 import { Request, Response } from "express";
 import cloudinary from "../lib/cloudinary";
+import { redisClient } from "../lib/redis";
 
 export default new (class userService {
   private readonly userRepository: Repository<User> =
@@ -88,6 +89,8 @@ export default new (class userService {
 
   async getCurrent(req: Request, res: Response): Promise<Response> {
     try {
+      let data = await redisClient.get(`user:${res.locals.loginSession.id}`);
+      console.log(data);
       const response = res.locals.loginSession.id;
       const getData = await this.userRepository
         .createQueryBuilder()
