@@ -9,6 +9,34 @@ export default new (class userService {
   private readonly userRepository: Repository<User> =
     AppDataSource.getRepository(User);
 
+  async getUserById(req: Request, res: Response): Promise<Response> {
+    try {
+      const username = String(req.params.username);
+      const response = await this.userRepository
+        .createQueryBuilder("user")
+        .leftJoinAndSelect("user.following", "following")
+        .leftJoinAndSelect("user.follower", "follower")
+        .where({ username: username })
+        .getOne();
+      return res.status(200).json({
+        message: "success",
+        data: {
+          id: response.id,
+          fullName: response.fullName,
+          email: response.email,
+          photo_profile: response.photo_profile,
+          photo_cover: response.photo_cover,
+          bio: response.bio,
+          username: response.username,
+          following: response.following.length,
+          follower: response.follower.length,
+        },
+      });
+    } catch (error) {
+      return res.status(500).json({ message: error.message });
+    }
+  }
+
   async update(req: Request, res: Response): Promise<Response> {
     try {
       const id = parseInt(req.params.id);
@@ -65,22 +93,55 @@ export default new (class userService {
 
       const user = await this.userRepository.save(obj);
 
-      // let img = null;
-      // if (req.file) {
-      //   data.image = res.locals.filename;
-      //   const cloud = await cloudinary.destination(data.image);
-      //   data.image = cloud;
-      // } else {
-      //   data.image = img;
-      // }
+      return res.status(200).json({ message: "update success", data: user });
+    } catch (error) {
+      return res.status(500).json(error);
+    }
+  }
 
-      // const response = await this.userRepository
-      //   .createQueryBuilder()
-      //   .update(User)
-      //   .set(data)
-      //   .where({ id })
-      //   .execute();
+  async updateCover(req: Request, res: Response) {
+    try {
+      const id = parseInt(req.params.id);
+      const userId = res.locals.loginSession.id;
+      const cover = req.file.filename;
 
+      if (userId != id) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      if (!cover) {
+        return res.status(400).json({ message: "Cover not found" });
+      }
+
+      const userLogin = await this.userRepository.findOne({
+        where: {
+          id,
+        },
+      });
+
+      if (userLogin.photo_cover == cover) {
+        return res.status(400).json({ message: "You dont change cover" });
+      } else {
+        cloudinary.config();
+        const cloud = await cloudinary.destination(cover);
+
+        await this.userRepository
+          .createQueryBuilder()
+          .update(User)
+          .set({ photo_cover: cloud })
+          .where({ id })
+          .execute();
+
+        return res.status(200).json({ message: "update cover success" });
+      }
+
+      const obj = await this.userRepository.findOne({
+        where: {
+          id,
+        },
+      });
+      const data = req.body;
+      const user = await this.userRepository.save(obj);
       return res.status(200).json({ message: "update success", data: user });
     } catch (error) {
       return res.status(500).json(error);
@@ -123,6 +184,7 @@ export default new (class userService {
         fullName: response.fullName,
         email: response.email,
         photo_profile: response.photo_profile,
+        photo_cover: response.photo_cover,
         bio: response.bio,
         username: response.username,
         following: response.following.length,

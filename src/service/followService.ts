@@ -19,10 +19,13 @@ export default new (class followService {
       const type = (req.query.type ?? "") as string;
       const limit = (req.query.limit ?? 0) as number;
       const searchTerm = req.query.searchTerm as string;
-
+      console.log(userId, type, limit, searchTerm);
       let follow: Following[];
       if (type === "following") {
+        // buat limitnya
+
         follow = await this.followRepository.find({
+          take: limit,
           where: {
             Follower: {
               id: userId,
@@ -109,13 +112,20 @@ export default new (class followService {
         // Membuat respons JSON berisi hasil pencarian
         return res.status(200).json({ message: "success", data: mappedData });
       } else if (type === "sugestion") {
+        //buat limit
         const users = await this.userRepository
           .createQueryBuilder()
-          .andWhere({ id: Not(userId) })
+          .where({ id: Not(userId) })
           .leftJoinAndSelect("User.following", "following")
           .leftJoinAndSelect("User.follower", "follower")
           .leftJoinAndSelect("following.Follower", "Follower")
           .getMany();
+
+        // const users = await this.userRepository.find({
+        //   take: limit,
+        //   where: { id: Not(userId) },
+        //   relations: ["following", "follower", "following.Follower"],
+        // });
 
         const mappedData = users.filter((item) => {
           return !item.following.some(
@@ -123,7 +133,9 @@ export default new (class followService {
           );
         });
 
-        const suggestedUsers = mappedData.map((user) => ({
+        const result = mappedData.slice(0, limit);
+
+        const suggestedUsers = result.map((user) => ({
           id: user.id,
           username: user.username,
           fullName: user.fullName,

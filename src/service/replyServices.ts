@@ -3,6 +3,7 @@ import { Reply } from "../entities/Reply";
 import { AppDataSource } from "../data-source";
 import { Request, Response } from "express";
 import cloudinary from "../lib/cloudinary";
+import { redisClient } from "../lib/redis";
 
 export default new (class replyService {
   private readonly replyRepository: Repository<Reply> =

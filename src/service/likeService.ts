@@ -2,6 +2,7 @@ import { Equal, Repository } from "typeorm";
 import { Like } from "../entities/Like";
 import { AppDataSource } from "../data-source";
 import { Request, Response } from "express";
+import { redisClient } from "../lib/redis";
 
 export default new (class likeService {
   private readonly likeRepository: Repository<Like> =

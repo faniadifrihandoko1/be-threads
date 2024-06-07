@@ -5,7 +5,7 @@ export default new (class followController {
   follow(req: Request, res: Response) {
     followService.follow(req, res);
   }
-
+  
   find(req: Request, res: Response) {
     followService.find(req, res);
   }

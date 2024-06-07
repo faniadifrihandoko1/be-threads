@@ -15,11 +15,24 @@ Route.post("/register", authController.register);
 Route.post("/login", authController.login);
 
 // User
-Route.put(
+
+Route.patch(
   "/user/:id",
 
   uploadFile.uploadImage("photo_profile"),
   userController.update
+);
+Route.patch(
+  "/user/photo-cover/:id",
+
+  uploadFile.uploadImage("photo_cover"),
+  authentication,
+  userController.updateCover
+);
+Route.get(
+  "/user/username/:username",
+  authentication,
+  userController.getUserById
 );
 Route.get("/user/get-current", authentication, userController.getCurrent);
 Route.get("/check", authentication, userController.check);
@@ -27,6 +40,7 @@ Route.get("/check", authentication, userController.check);
 // Thread
 Route.get("/thread", threadController.findAll);
 Route.get("/threadUser", authentication, threadController.getThreadByUser);
+Route.get("/thread/:id", authentication, threadController.getThreadById);
 Route.post(
   "/thread",
   authentication,
@@ -52,7 +66,7 @@ Route.post("/thread/like/:id", authentication, likeController.create);
 Route.get("/thread/:id/like", authentication, likeController.getLikeByUser);
 
 // Follow
-Route.get("/user/follow", authentication, followController.find);
-Route.post("/user/follow", authentication, followController.follow);
+Route.get("/follow", authentication, followController.find);
+Route.post("/follow", authentication, followController.follow);
 
 export default Route;

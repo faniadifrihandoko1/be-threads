@@ -24,14 +24,24 @@ export default new (class AuthService {
           message: error.details[0].message,
         });
       }
-      const getData = await this.userRepository
+
+      const getUsername = await this.userRepository
+        .createQueryBuilder("user")
+        .where({ username: value.username })
+        .getCount();
+
+      const getEmail = await this.userRepository
         .createQueryBuilder("user")
         .where({ email: value.email })
         .getCount();
 
-      if (getData > 0) {
+      if (getEmail > 0) {
         return res.status(400).json({
-          message: "Email or username already exist",
+          message: "Email sudah terdaftar, gunakan email lain",
+        });
+      } else if (getUsername > 0) {
+        return res.status(400).json({
+          message: "Username sudah terdaftar, gunakan username lain",
         });
       }
 
@@ -45,7 +55,7 @@ export default new (class AuthService {
         .execute();
       console.log(`response :`, response);
       return res.status(200).json({
-        message: "Register success",
+        message: "Register Berhasil",
         data: value,
       });
     } catch (error) {
@@ -70,7 +80,7 @@ export default new (class AuthService {
 
     if (!getData) {
       return res.status(400).json({
-        message: "Email not found",
+        message: "Email tidak terdaftar",
       });
     }
     const comparePassword = await bcrypt.compare(
@@ -79,7 +89,7 @@ export default new (class AuthService {
     );
     if (!comparePassword) {
       return res.status(400).json({
-        message: "Wrong password",
+        message: "Password salah",
       });
     }
 
@@ -89,6 +99,7 @@ export default new (class AuthService {
       username: getData.username,
       fullName: getData.fullName,
       photo_profile: getData.photo_profile,
+      photo_cover: getData.photo_cover,
       bio: getData.bio,
       following: getData.following,
       follower: getData.follower,
@@ -96,7 +107,7 @@ export default new (class AuthService {
 
     const token = generateAccessToken(obj);
     return res.status(200).json({
-      message: "Login success",
+      message: "Login Berhasil",
       token,
     });
   }
