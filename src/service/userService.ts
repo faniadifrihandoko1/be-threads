@@ -12,10 +12,12 @@ export default new (class userService {
   async getUserById(req: Request, res: Response): Promise<Response> {
     try {
       const username = String(req.params.username);
+      const userId = res.locals.loginSession.id;
       const response = await this.userRepository
         .createQueryBuilder("user")
         .leftJoinAndSelect("user.following", "following")
         .leftJoinAndSelect("user.follower", "follower")
+        .leftJoinAndSelect("following.Follower", "Follower")
         .where({ username: username })
         .getOne();
       return res.status(200).json({
@@ -28,8 +30,11 @@ export default new (class userService {
           photo_cover: response.photo_cover,
           bio: response.bio,
           username: response.username,
-          following: response.following.length,
-          follower: response.follower.length,
+          is_following: response.following.some(
+            (following) => following.Follower.id == userId
+          ),
+          following_count: response.following.length,
+          follower_count: response.follower.length,
         },
       });
     } catch (error) {

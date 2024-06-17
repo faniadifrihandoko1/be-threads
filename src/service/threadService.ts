@@ -79,9 +79,8 @@ export default new (class threadService {
       const id = Number(req.params.id);
       const userId = req.query.id;
 
-      const dataFromDB = await this.threadRepository
+      const thread = await this.threadRepository
         .createQueryBuilder("thread")
-        .orderBy("thread.created_at", "DESC")
         .where({ id })
         .leftJoinAndSelect("thread.user", "user")
         .leftJoinAndSelect("thread.reply", "reply")
@@ -89,7 +88,11 @@ export default new (class threadService {
         .leftJoinAndSelect("thread.like", "like")
         .leftJoinAndSelect("like.user", "userLike")
         .select([
-          "thread",
+          "thread.id",
+          "thread.content",
+          "thread.image",
+          "thread.created_at",
+          "thread.updated_at",
           "user.id",
           "user.fullName",
           "user.username",
@@ -109,36 +112,45 @@ export default new (class threadService {
         ])
         .loadRelationCountAndMap("thread.reply_count", "thread.reply")
         .loadRelationCountAndMap("thread.like_count", "thread.like")
+        .orderBy("reply.created_at", "DESC")
         .getOne();
+
+      if (!thread) {
+        return res.status(404).json({ message: "Thread not found" });
+      }
 
       const like = await this.likeRepository
         .createQueryBuilder("like")
         .where({ thread: { id } })
         .andWhere({ user: { id: userId } })
         .leftJoinAndSelect("like.user", "userLike")
-        .select(["like", "userLike.id"])
+        .select(["like.id", "userLike.id"])
         .getOne();
 
-      const likes = like ? true : false;
+      const isLiked = like ? true : false;
+
+      // Siapkan hasil akhir
       const result = {
-        id: dataFromDB.id,
-        content: dataFromDB.content,
-        image: dataFromDB.image,
-        reply_count: dataFromDB.reply.length,
-        like_count: dataFromDB.like.length,
-        created_at: dataFromDB.created_at,
-        updated_at: dataFromDB.updated_at,
-        isLiked: likes,
-        user: dataFromDB.user,
-        like: dataFromDB.like,
-        reply: dataFromDB.reply,
+        id: thread.id,
+        content: thread.content,
+        image: thread.image,
+        reply_count: thread.reply.length,
+        like_count: thread.like.length,
+        created_at: thread.created_at,
+        updated_at: thread.updated_at,
+        isLiked,
+        user: thread.user,
+        like: thread.like,
+        reply: thread.reply,
       };
 
       return res.status(200).json(result);
     } catch (error) {
-      return res.status(500).json(error);
+      console.error("Error fetching thread:", error);
+      return res.status(500).json({ message: "Internal Server Error" });
     }
   }
+
   async findAll(req: Request, res: Response): Promise<Response> {
     try {
       const userId = req.query.id;
